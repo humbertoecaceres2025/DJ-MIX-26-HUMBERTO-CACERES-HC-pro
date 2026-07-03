@@ -1,0 +1,9 @@
+from app.recommender import recommend_next
+
+current = "Titanium"
+
+next_song, score = recommend_next(current)
+
+print("Siguiente recomendada:")
+print(next_song)
+print("Score:", score)
