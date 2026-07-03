@@ -1,0 +1,68 @@
+import sqlite3
+import os
+
+DB_PATH = os.path.join("database", "autodj.db")
+
+
+def init_db():
+    os.makedirs("database", exist_ok=True)
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS media (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        path TEXT,
+        type TEXT,
+        bpm REAL,
+        key TEXT,
+        energy REAL
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def insert_media(title, path, media_type, bpm=None, key=None, energy=None):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO media (title, path, type, bpm, key, energy)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (title, path, media_type, bpm, key, energy))
+
+    conn.commit()
+    conn.close()
+
+
+def update_analysis(path, bpm, key, energy):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    UPDATE media
+    SET bpm=?, key=?, energy=?
+    WHERE path=?
+    """, (bpm, key, energy, path))
+
+    conn.commit()
+    conn.close()
+
+
+def get_stats():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM media WHERE type='audio'")
+    audio = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM media WHERE type='video'")
+    video = cursor.fetchone()[0]
+
+    conn.close()
+
+    return audio, video
