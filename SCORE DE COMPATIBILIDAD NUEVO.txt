@@ -1,0 +1,1 @@
+Score = BPM + Key + Energy + Flow
