@@ -1,0 +1,78 @@
+import sqlite3
+import math
+
+DB_PATH = "database/autodj.db"
+
+
+def get_all_audio():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT title, path, bpm, key, energy
+        FROM media
+        WHERE type='audio'
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def key_distance(k1, k2):
+    # simplificación musical
+    notes = ["C", "C#", "D", "D#", "E", "F",
+             "F#", "G", "G#", "A", "A#", "B"]
+
+    if k1 not in notes or k2 not in notes:
+        return 12
+
+    return abs(notes.index(k1) - notes.index(k2))
+
+
+def compatibility_score(current, candidate):
+    _, _, bpm1, key1, energy1 = current
+    _, _, bpm2, key2, energy2 = candidate
+
+    if bpm1 is None or bpm2 is None:
+        return -999
+
+    bpm_diff = abs(bpm1 - bpm2)
+    key_diff = key_distance(key1, key2)
+    energy_diff = abs((energy1 or 0) - (energy2 or 0))
+
+    score = (
+        -bpm_diff * 2.0
+        -key_diff * 5.0
+        -energy_diff * 10.0
+    )
+
+    return score
+
+
+def recommend_next(current_title):
+    songs = get_all_audio()
+
+    current_song = None
+    for s in songs:
+        if s[0] == current_title:
+            current_song = s
+            break
+
+    if not current_song:
+        return None
+
+    best = None
+    best_score = -999999
+
+    for candidate in songs:
+        if candidate[0] == current_title:
+            continue
+
+        score = compatibility_score(current_song, candidate)
+
+        if score > best_score:
+            best_score = score
+            best = candidate
+
+    return best, best_score
